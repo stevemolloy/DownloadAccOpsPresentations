@@ -9,8 +9,9 @@ SCOPES = 'https://www.googleapis.com/auth/drive'
 
 def main():
     """
-    Shows basic usage of the Drive v3 API.
-    Prints the names and ids of the first 10 files the user has access to.
+    Identifies the presentation files inside the folders belonging
+    to a particular folder, exports them as PDF's, and saves them to
+    the 'output' folder.
     """
     store = file.Storage('token.json')
     creds = store.get()
