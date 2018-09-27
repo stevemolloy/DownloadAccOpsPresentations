@@ -4,7 +4,7 @@ from httplib2 import Http
 from oauth2client import file, client, tools
 
 # If modifying these scopes, delete the file token.json.
-SCOPES = 'https://www.googleapis.com/auth/drive.metadata.readonly'
+SCOPES = 'https://www.googleapis.com/auth/drive'
 
 
 def main():
@@ -19,17 +19,25 @@ def main():
         flow = client.flow_from_clientsecrets('credentials.json', SCOPES)
         creds = tools.run_flow(flow, store)
     service = build('drive', 'v3', http=creds.authorize(Http()))
-    # Call the Drive v3 API
-    results = service.files().list(
-        pageSize=10, fields="nextPageToken, files(id, name)").execute()
-    items = results.get('files', [])
+    files = service.files()
 
-    if not items:
-        print('No files found.')
-    else:
-        print('Files:')
-        for item in items:
-            print('{0} ({1})'.format(item['name'], item['id']))
+    # Get all folders under the AccOps folder
+    results = files.list(q="'1QL9gcfBoz4pE9U9oDDrc-mOwXRYR0bxk' in parents")
+    results = results.execute()
+    for i in results.get('files', []):
+        print(i['name'])
+        # Get all presentation files under this folder
+        query = "'" + i['id'] + "' in parents"
+        query += " and mimeType='application/vnd.google-apps.presentation'"
+        n = files.list(q=query)
+        n = n.execute()
+        for j in n.get('files', []):
+            # Now j is a presentation file
+            print('\t' + j['name'] + " :: " + j['id'])
+            pdf = files.export(fileId=j['id'], mimeType='application/pdf')
+            pdf = pdf.execute()
+            with open('output/'+j['name'] + '.pdf', 'wb') as f:
+                f.write(pdf)
 
 
 if __name__ == '__main__':
